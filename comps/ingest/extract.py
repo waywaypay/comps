@@ -1,5 +1,9 @@
 """LLM structured extraction. One call per deal.
 
+Talks to any OpenAI-compatible endpoint (Venice, OpenAI, vLLM, etc.). The
+model is configured via LLM_MODEL — for Venice-routed Claude this is e.g.
+"claude-sonnet-4-6".
+
 Strictness on two things:
     1. Refuse-on-uncertainty — null beats a hallucinated number.
     2. Unit normalization in the prompt, not after — the model sees the
@@ -8,7 +12,9 @@ Strictness on two things:
 
 from __future__ import annotations
 
-from anthropic import Anthropic
+import json
+
+from openai import OpenAI
 
 from comps.core.config import settings
 from comps.core.logging import get
@@ -30,18 +36,24 @@ Rules:
 - Dates: ISO YYYY-MM-DD, never partial.
 - If document is silent on a field, the field is null. Do not infer from
   general knowledge about the companies.
+
+You MUST call the record_deal function with your extracted values.
 """
 
 
-_TOOL_SCHEMA = {
-    "name": "record_deal",
-    "description": "Record extracted deal fields.",
-    "input_schema": DealFields.model_json_schema(),
+_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "record_deal",
+        "description": "Record extracted deal fields.",
+        "parameters": DealFields.model_json_schema(),
+    },
 }
 
 
-def _client() -> Anthropic:
-    return Anthropic(api_key=settings().anthropic_api_key or None)
+def _client() -> OpenAI:
+    cfg = settings()
+    return OpenAI(api_key=cfg.llm_api_key or "dummy", base_url=cfg.llm_base_url)
 
 
 def extract(text: str) -> DealFields:
@@ -52,23 +64,22 @@ def extract(text: str) -> DealFields:
     """
     cfg = settings()
     truncated = text[: cfg.ingest_max_extract_chars]
-    msg = _client().messages.create(
-        model=cfg.anthropic_model,
+    resp = _client().chat.completions.create(
+        model=cfg.llm_model,
         max_tokens=2000,
-        system=[
-            {
-                "type": "text",
-                "text": EXTRACT_PROMPT,
-                "cache_control": {"type": "ephemeral"},
-            }
+        messages=[
+            {"role": "system", "content": EXTRACT_PROMPT},
+            {"role": "user", "content": truncated},
         ],
-        messages=[{"role": "user", "content": truncated}],
-        tools=[_TOOL_SCHEMA],
-        tool_choice={"type": "tool", "name": "record_deal"},
+        tools=[_TOOL],
+        tool_choice={"type": "function", "function": {"name": "record_deal"}},
     )
 
-    for block in msg.content:
-        if getattr(block, "type", None) == "tool_use" and block.name == "record_deal":
-            return DealFields.model_validate(block.input)
+    msg = resp.choices[0].message
+    if not msg.tool_calls:
+        raise RuntimeError("model did not return a record_deal tool call")
 
-    raise RuntimeError("model did not return a record_deal tool call")
+    call = msg.tool_calls[0]
+    args = call.function.arguments
+    payload = json.loads(args) if isinstance(args, str) else args
+    return DealFields.model_validate(payload)

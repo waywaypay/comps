@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 
-from anthropic import Anthropic
+from openai import OpenAI
 
 from comps.core.config import settings
 from comps.core.logging import get
@@ -61,29 +61,23 @@ Return ONLY the JSON object, no prose.
 """
 
 
-def _client() -> Anthropic:
-    return Anthropic(api_key=settings().anthropic_api_key or None)
+def _client() -> OpenAI:
+    cfg = settings()
+    return OpenAI(api_key=cfg.llm_api_key or "dummy", base_url=cfg.llm_base_url)
 
 
 def understand(query: str) -> ParsedQuery:
     cfg = settings()
-    msg = _client().messages.create(
-        model=cfg.anthropic_model,
+    resp = _client().chat.completions.create(
+        model=cfg.llm_model,
         max_tokens=400,
-        system=[
-            {
-                "type": "text",
-                "text": UNDERSTAND_PROMPT,
-                "cache_control": {"type": "ephemeral"},
-            }
+        messages=[
+            {"role": "system", "content": UNDERSTAND_PROMPT},
+            {"role": "user", "content": query},
         ],
-        messages=[{"role": "user", "content": query}],
+        response_format={"type": "json_object"},
     )
-    text = ""
-    for block in msg.content:
-        if getattr(block, "type", None) == "text":
-            text += block.text
-    text = text.strip().strip("`")
+    text = (resp.choices[0].message.content or "").strip().strip("`")
     if text.startswith("json"):
         text = text[4:].lstrip()
 
