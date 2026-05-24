@@ -1,0 +1,29 @@
+# Fly.io app config for the comps arq worker.
+# Deploy from repo root:
+#   fly deploy -c deploy/fly.worker.toml
+#
+# The worker is a separate Fly app (not just a process) so it scales
+# independently from the API and a crash loop doesn't blow up serving.
+
+app = "comps-worker"
+primary_region = "iad"
+
+[build]
+  dockerfile = "docker/worker.Dockerfile"
+
+[env]
+  LLM_BASE_URL = "https://api.venice.ai/api/v1"
+  LLM_MODEL = "claude-sonnet-4-6"
+  VOYAGE_EMBED_MODEL = "voyage-finance-2"
+  VOYAGE_RERANK_MODEL = "rerank-2"
+
+# Secrets set via:  fly secrets set -a comps-worker DATABASE_URL=... LLM_API_KEY=... VOYAGE_API_KEY=... REDIS_URL=...
+
+# No public HTTP. The worker pulls jobs from Redis.
+[processes]
+  worker = "arq comps.ingest.pipeline.WorkerSettings"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 1024  # docling + tiktoken want more RAM than the API

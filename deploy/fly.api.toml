@@ -1,0 +1,44 @@
+# Fly.io app config for the comps API.
+# Deploy from repo root:
+#   fly deploy -c deploy/fly.api.toml
+
+app = "comps-api"
+primary_region = "iad"
+
+[build]
+  dockerfile = "docker/api.Dockerfile"
+
+# Run pending Postgres migrations before each deploy. Idempotent and fast
+# (forward-only, tracked in comps_migrations table).
+[deploy]
+  release_command = "python -m comps.db.migrate"
+
+[env]
+  COMPS_API_HOST = "0.0.0.0"
+  COMPS_API_PORT = "8000"
+  LLM_BASE_URL = "https://api.venice.ai/api/v1"
+  LLM_MODEL = "claude-sonnet-4-6"
+  VOYAGE_EMBED_MODEL = "voyage-finance-2"
+  VOYAGE_RERANK_MODEL = "rerank-2"
+
+# Secrets set via:  fly secrets set DATABASE_URL=... LLM_API_KEY=... VOYAGE_API_KEY=... REDIS_URL=...
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.checks]
+    [http_service.checks.healthz]
+      type = "http"
+      path = "/healthz"
+      interval = "15s"
+      timeout = "5s"
+      grace_period = "10s"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
