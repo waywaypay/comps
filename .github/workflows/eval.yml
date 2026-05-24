@@ -11,9 +11,11 @@ on:
 jobs:
   eval:
     runs-on: ubuntu-latest
-    if: ${{ secrets.ANTHROPIC_API_KEY != '' && secrets.VOYAGE_API_KEY != '' && secrets.EVAL_DATABASE_URL != '' }}
+    if: ${{ secrets.LLM_API_KEY != '' && secrets.VOYAGE_API_KEY != '' && secrets.EVAL_DATABASE_URL != '' }}
     env:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+      LLM_MODEL: ${{ secrets.LLM_MODEL }}
       VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
       DATABASE_URL: ${{ secrets.EVAL_DATABASE_URL }}
     steps:

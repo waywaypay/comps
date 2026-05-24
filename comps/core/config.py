@@ -10,8 +10,9 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://comps:comps@localhost:5432/comps"
     redis_url: str = "redis://localhost:6379/0"
 
-    anthropic_api_key: str = ""
-    anthropic_model: str = "claude-sonnet-4-6"
+    llm_api_key: str = ""
+    llm_base_url: str = "https://api.venice.ai/api/v1"
+    llm_model: str = "claude-sonnet-4-6"
 
     voyage_api_key: str = ""
     voyage_embed_model: str = "voyage-finance-2"

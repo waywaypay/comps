@@ -6,7 +6,7 @@ financial documents (10-K, S-1, press releases, deal memos, CIMs).
 - Postgres 16 + pgvector + pg_trgm + built-in FTS — one system, joins are free
 - voyage-finance-2 embeddings (1024-d, asymmetric)
 - Cross-encoder rerank via voyage-rerank-2
-- Claude Sonnet 4.6 for structured extraction and NL query understanding
+- Claude Sonnet 4.6 (via Venice or any OpenAI-compatible endpoint) for structured extraction and NL query understanding
 - Docling for PDF parsing (tables preserved), trafilatura for HTML
 - FastAPI + Uvicorn surface, arq workers, Typer CLI
 - Eval harness with nDCG@10 / recall@20 gate in CI
