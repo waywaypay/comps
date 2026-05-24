@@ -1,0 +1,39 @@
+name: eval
+
+on:
+  pull_request:
+    paths:
+      - "comps/search/**"
+      - "comps/ingest/**"
+      - "comps/eval/**"
+      - "migrations/**"
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    if: ${{ secrets.ANTHROPIC_API_KEY != '' && secrets.VOYAGE_API_KEY != '' && secrets.EVAL_DATABASE_URL != '' }}
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
+      DATABASE_URL: ${{ secrets.EVAL_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+
+      - name: Baseline (main)
+        run: |
+          git checkout origin/${{ github.base_ref }} -- comps
+          python -m comps.eval.run --out baseline.json
+          git checkout HEAD -- comps
+
+      - name: Candidate (PR)
+        run: python -m comps.eval.run --out candidate.json
+
+      - name: Gate
+        run: python -m comps.eval.gate --baseline baseline.json --candidate candidate.json --min-ndcg-delta -0.01

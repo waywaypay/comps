@@ -1,0 +1,79 @@
+[project]
+name = "comps"
+version = "0.1.0"
+description = "Financial deal comps search: hybrid BM25 + vector retrieval over financial documents."
+requires-python = ">=3.12"
+readme = "README.md"
+authors = [{ name = "comps team" }]
+
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.5.0",
+    "typer>=0.12.5",
+    "rich>=13.9.0",
+    "psycopg[binary,pool]>=3.2.0",
+    "pgvector>=0.3.4",
+    "anthropic>=0.39.0",
+    "voyageai>=0.3.0",
+    "arq>=0.26.1",
+    "redis>=5.1.0",
+    "trafilatura>=1.12.0",
+    "docling>=2.0.0",
+    "httpx>=0.27.0",
+    "tenacity>=9.0.0",
+    "tiktoken>=0.8.0",
+    "numpy>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=5.0.0",
+    "ruff>=0.7.0",
+    "mypy>=1.13.0",
+    "types-redis>=4.6.0",
+    "pgcli>=4.1.0",
+]
+
+[project.scripts]
+comps = "comps.cli.main:app"
+comps-worker = "comps.ingest.pipeline:run_worker"
+comps-api = "comps.search.service:run"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["comps"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Typer reads Argument/Option metadata from defaults — required idiom.
+"comps/cli/main.py" = ["B008"]
+# arq WorkerSettings is a class-as-config: mutable class-attribute lists are the API.
+"comps/ingest/pipeline.py" = ["RUF012"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "integration: requires Postgres/Redis/API keys",
+    "slow: long-running tests",
+]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true

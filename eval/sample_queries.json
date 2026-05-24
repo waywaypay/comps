@@ -1,0 +1,30 @@
+[
+  {
+    "query": "vertical SaaS PE buyout in europe, $30M ARR, 2021-2024",
+    "filters": {
+      "revenue_band": [25000000, 35000000],
+      "deal_type": "LBO",
+      "buyer_type": "PE",
+      "region": "EU",
+      "year_band": [2021, 2024]
+    },
+    "judgments": []
+  },
+  {
+    "query": "strategic acquisition of industrial automation business in north america",
+    "filters": {
+      "deal_type": "M&A",
+      "buyer_type": "strategic",
+      "region": "NA"
+    },
+    "judgments": []
+  },
+  {
+    "query": "healthcare services LBO with 4-6x EV/EBITDA",
+    "filters": {
+      "deal_type": "LBO",
+      "buyer_type": "PE"
+    },
+    "judgments": []
+  }
+]
