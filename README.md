@@ -85,3 +85,10 @@ degrade the system inside of a month.
 
 All configuration via env or `.env`. See `.env.example`. The settings object
 in `comps/core/config.py` is the source of truth.
+
+## Deploy
+
+Production deploy on Fly.io + Neon (Postgres+pgvector) + Upstash (Redis):
+see [deploy/DEPLOY.md](deploy/DEPLOY.md). GitHub Actions auto-deploys
+both apps on push to `main` once `FLY_API_TOKEN` is set and
+`DEPLOY_ENABLED` repo variable is `true`.
